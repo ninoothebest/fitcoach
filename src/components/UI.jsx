@@ -38,7 +38,7 @@ export function Chip({ label, active, onClick, color = "pink" }) {
 
 export function ProgressBar({ label, val, max, gradient, unit = "" }) {
   const pct = Math.min(100, Math.max(0, (val / max) * 100));
-  const color = pct >= 100 ? "#3DBF8A" : pct >= 70 ? "#FFB5C8" : "#E87070";
+  const color = pct >= 100 ? "#3DBF8A" : pct >= 70 ? "#E8608A" : "#E87070";
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
@@ -88,7 +88,7 @@ export function PrimaryBtn({ children, onClick, loading = false, style = {} }) {
     <button onClick={onClick} disabled={loading} style={{
       width: "100%", padding: 16, border: "none", borderRadius: 18,
       background: loading ? "#DDD" : "linear-gradient(135deg,#FFB5C8,#C9B8F5)",
-      color: "#fff", fontFamily: "Quicksand", fontSize: 15, fontWeight: 800,
+      color: loading ? "#999" : "#fff", fontFamily: "Quicksand", fontSize: 15, fontWeight: 800,
       cursor: loading ? "not-allowed" : "pointer",
       boxShadow: loading ? "none" : "0 6px 20px rgba(255,181,200,0.45)",
       transition: "all .2s", letterSpacing: .5, marginTop: 8, ...style
@@ -108,6 +108,20 @@ export function Toast({ msg, show }) {
   );
 }
 
+// ✅ แก้ bug วันที่ใต้กราฟ
+function formatDateLabel(dateStr) {
+  if (!dateStr) return "";
+  // ถ้าเป็น ISO format ให้แปลง
+  if (dateStr.includes("T")) {
+    const d = new Date(dateStr);
+    return `${d.getDate()} มิ.ย.`;
+  }
+  // ถ้าเป็น th-TH format เช่น "6 มิถุนายน 2569"
+  const parts = dateStr.split(" ");
+  if (parts.length >= 2) return `${parts[0]} ${parts[1]?.substring(0, 3)}`;
+  return dateStr;
+}
+
 export function WeightChart({ logs }) {
   if (!logs || logs.length < 2) return (
     <div style={{ textAlign: "center", color: "#C0B0D0", padding: "20px 0", fontSize: 13 }}>
@@ -120,8 +134,9 @@ export function WeightChart({ logs }) {
   const W = 300, H = 90, pad = 14;
   const pts = recent.map((l, i) => ({
     x: pad + (i / (recent.length - 1)) * (W - pad * 2),
-    y: pad + ((max - l.weight) / (max - min)) * (H - pad * 2),
-    val: l.weight, date: l.date,
+    y: pad + ((max - parseFloat(l.weight)) / (max - min)) * (H - pad * 2),
+    val: l.weight,
+    label: formatDateLabel(l.date),
   }));
   const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
   const area = line + ` L${pts[pts.length-1].x},${H} L${pts[0].x},${H} Z`;
@@ -148,7 +163,7 @@ export function WeightChart({ logs }) {
         ))}
       </svg>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#C0B0D0", fontWeight: 600, marginTop: 4 }}>
-        {recent.map((l, i) => <span key={i}>{l.date?.split(" ")[0] || l.date}</span>)}
+        {pts.map((p, i) => <span key={i}>{p.label}</span>)}
       </div>
     </div>
   );
